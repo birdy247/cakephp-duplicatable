@@ -102,12 +102,24 @@ class DuplicatableBehavior extends Behavior
         // modify related entities
         foreach ($this->config('contain') as $contain) {
             if (preg_match('/^' . preg_quote($pathPrefix, '/') . '([^.]+)/', $contain, $matches)) {
-                foreach ($entity->{Inflector::tableize($matches[1])} as $related) {
-                    if ($related->isNew()) {
-                        continue;
-                    }
 
-                    $this->_modifyEntity($related, $table->{$matches[1]}, $pathPrefix . $matches[1] . '.');
+                //Get the property name
+                $propertyName = $table->associations()->get($matches[1])->property();
+
+                //If its a hasOne property
+                if (!is_array($entity->{$propertyName})) {
+                    if (!$entity->{$propertyName}->isNew()) {
+                        $this->_modifyEntity($entity->{$propertyName}, $table->{$matches[1]}, $pathPrefix . $matches[1] . '.');
+                    }
+                } else {
+                    foreach ($entity->{$propertyName} as $related) {
+
+                        if ($related->isNew()) {
+                            continue;
+                        }
+
+                        $this->_modifyEntity($related, $table->{$matches[1]}, $pathPrefix . $matches[1] . '.');
+                    }
                 }
             }
         }
